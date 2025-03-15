@@ -457,33 +457,33 @@
             }
         }
         
-        // הפחתת סכום קבוע
-        function subtractAmount() {
-            if (!selectedAmount) {
-                alert('אנא בחר סכום להפחתה');
-                return;
-            }
-            
-            if (selectedAmount > totalAmount) {
-                alert('הסכום שנבחר גדול מהסכום הכולל הנוכחי');
-                return;
-            }
-            
-            const oldAmount = totalAmount;
-            totalAmount -= selectedAmount;
-            
-            // עדכון התצוגה
-            document.getElementById('total-amount').textContent = formatNumber(totalAmount);
-            
-            // הוספה להיסטוריה
-            addToHistory(oldAmount, totalAmount, -selectedAmount, `הפחתה של ${selectedAmount} קונ'`);
-            
-            // איפוס הבחירה
-            document.querySelectorAll('.amount-btn').forEach(btn => {
-                btn.classList.remove('selected-amount');
-            });
-            selectedAmount = null;
-        }
+      // הפחתת סכום קבוע
+function subtractAmount() {
+    if (!selectedAmount) {
+        alert('אנא בחר סכום להפחתה');
+        return;
+    }
+    
+    if (selectedAmount > totalAmount) {
+        alert('הסכום שנבחר גדול מהסכום הכולל הנוכחי');
+        return;
+    }
+    
+    const oldAmount = totalAmount;
+    totalAmount -= selectedAmount;
+    
+    // עדכון התצוגה
+    document.getElementById('total-amount').textContent = formatNumber(totalAmount);
+    
+    // הוספה להיסטוריה
+    addToHistory(oldAmount, totalAmount, -selectedAmount, `הפחתה של ${selectedAmount} קונ'`);
+    
+    // איפוס הבחירה
+    document.querySelectorAll('.amount-btn').forEach(btn => {
+        btn.classList.remove('selected-amount');
+    });
+    selectedAmount = null;
+}
         
         // הפחתת סכום מותאם אישית
         function subtractCustomAmount() {
