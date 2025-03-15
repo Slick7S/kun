@@ -465,6 +465,28 @@
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
         
+        // שמירת הסכום הכולל ב-localStorage
+        function saveTotal() {
+            try {
+                localStorage.setItem('totalAmount', totalAmount.toString());
+            } catch (error) {
+                console.log('לא ניתן לשמור את הסכום ב-localStorage');
+            }
+        }
+        
+        // טעינת הסכום הכולל מ-localStorage
+        function loadTotal() {
+            try {
+                const savedAmount = localStorage.getItem('totalAmount');
+                if (savedAmount) {
+                    return parseInt(savedAmount);
+                }
+            } catch (error) {
+                console.log('לא ניתן לטעון את הסכום מ-localStorage');
+            }
+            return 2000; // ערך ברירת מחדל
+        }
+        
         // בחירת סכום
         function selectAmount(amount) {
             // איפוס כל הכפתורים
@@ -512,6 +534,9 @@
             // הוספה להיסטוריה
             addToHistory(oldAmount, totalAmount, -selectedAmount, `הפחתה של ${selectedAmount} קונ'`);
             
+            // שמירת הסכום החדש
+            saveTotal();
+            
             // איפוס הבחירה
             document.querySelectorAll('.amount-btn').forEach(btn => {
                 btn.classList.remove('selected-amount');
@@ -548,6 +573,9 @@
             
             // הוספה להיסטוריה
             addToHistory(oldAmount, totalAmount, -amount, `הפחתה מותאמת אישית של ${amount} קונ'`);
+            
+            // שמירת הסכום החדש
+            saveTotal();
             
             // איפוס השדה
             input.value = '';
@@ -588,6 +616,9 @@
             const action = change >= 0 ? `עדכון ידני (+${formatNumber(change)})` : `עדכון ידני (${formatNumber(change)})`;
             addToHistory(oldAmount, totalAmount, change, action);
             
+            // שמירת הסכום החדש
+            saveTotal();
+            
             // איפוס השדה וסגירת הדיאלוג
             document.getElementById('manual-amount').value = '';
             closeConfirmDialog();
@@ -613,6 +644,13 @@
             // הגבלה ל-100 פריטים
             if (history.length > 100) {
                 history.pop();
+            }
+            
+            // שמירת ההיסטוריה ב-localStorage
+            try {
+                localStorage.setItem('amountHistory', JSON.stringify(history));
+            } catch (error) {
+                console.log('לא ניתן לשמור את ההיסטוריה ב-localStorage');
             }
             
             // עדכון תצוגת ההיסטוריה
@@ -681,20 +719,18 @@
             updateHistoryCount();
         }
         
-        // הוספת מאזין אירועים לכפתור ההפחתה
-        document.addEventListener('DOMContentLoaded', function() {
-            const subtractButton = document.querySelector('.custom-amount button');
-            subtractButton.addEventListener('click', subtractAmount);
-            
-            // פורמט מספר ראשוני
-            document.getElementById('total-amount').textContent = formatNumber(totalAmount);
-            
-            // עדכון מספר הפעולות בתחילה
-            updateHistoryCount();
-            
-            // בדיקת פרמטרים ב-URL
-            checkURLParams();
-        });
+        // טעינת ההיסטוריה מ-localStorage
+        function loadHistory() {
+            try {
+                const savedHistory = localStorage.getItem('amountHistory');
+                if (savedHistory) {
+                    return JSON.parse(savedHistory);
+                }
+            } catch (error) {
+                console.log('לא ניתן לטעון את ההיסטוריה מ-localStorage');
+            }
+            return [];
+        }
         
         // קוד לבדיקת פרמטרים ב-URL בעת טעינה
         function checkURLParams() {
@@ -702,36 +738,65 @@
             const amount = urlParams.get('amount');
             
             if (amount && !isNaN(amount)) {
-                const newAmount = parseInt(amount);
+                const amountToAdd = parseInt(amount);
                 const oldAmount = totalAmount;
-                totalAmount = newAmount;
+                
+                // הוספת הערך לסכום הקיים (במקום החלפה)
+                totalAmount += amountToAdd;
                 
                 // עדכון התצוגה
                 document.getElementById('total-amount').textContent = formatNumber(totalAmount);
                 
-                // עדכון ההיסטוריה
-                if (oldAmount !== newAmount) {
-                    const change = newAmount - oldAmount;
-                    const action = `עדכון מ-Google Sheets`;
-                    addToHistory(oldAmount, newAmount, change, action);
+                // הוספה להיסטוריה אם יש שינוי
+                if (amountToAdd !== 0) {
+                    const action = `עדכון מ-Google Sheets (+${formatNumber(amountToAdd)})`;
+                    addToHistory(oldAmount, totalAmount, amountToAdd, action);
                 }
+                
+                // שמירת הסכום החדש
+                saveTotal();
+                
+                // הסרת הפרמטרים מהכתובת כדי למנוע עדכונים חוזרים בעת רענון
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
+        
+        // הוספת מאזין אירועים לכפתור ההפחתה
+        document.addEventListener('DOMContentLoaded', function() {
+            // טעינת הנתונים מהאחסון המקומי
+            totalAmount = loadTotal();
+            history = loadHistory();
+            
+            // עדכון התצוגה
+            document.getElementById('total-amount').textContent = formatNumber(totalAmount);
+            renderHistory();
+            
+            // הוספת מאזין אירועים לכפתור ההפחתה
+            const subtractButton = document.querySelector('.custom-amount button');
+            subtractButton.addEventListener('click', subtractAmount);
+            
+            // בדיקת פרמטרים ב-URL
+            checkURLParams();
+        });
         
         // פונקציה לקבלת עדכונים חיצוניים
         window.receiveWebhook = function(data) {
             if (data && data.amount !== undefined) {
-                const newAmount = parseInt(data.amount);
+                const amountToAdd = parseInt(data.amount);
                 const oldAmount = totalAmount;
-                const change = newAmount - oldAmount;
                 
-                totalAmount = newAmount;
+                // הוספת הערך לסכום הקיים
+                totalAmount += amountToAdd;
                 
                 // עדכון התצוגה
                 document.getElementById('total-amount').textContent = formatNumber(totalAmount);
                 
-                // עדכון ההיסטוריה
-                addToHistory(oldAmount, totalAmount, change, 'עדכון ממקור חיצוני');
+                // הוספה להיסטוריה
+                const action = `עדכון ממקור חיצוני (+${formatNumber(amountToAdd)})`;
+                addToHistory(oldAmount, totalAmount, amountToAdd, action);
+                
+                // שמירת הסכום החדש
+                saveTotal();
                 
                 return { status: 'success', message: 'Amount updated successfully' };
             } else {
