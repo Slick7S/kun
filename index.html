@@ -321,6 +321,22 @@
             color: white !important;
         }
 
+        #custom-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%; 
+            transform: translateX(-50%);
+            background: #4a5568;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            text-align: center;
+            min-width: 200px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
@@ -418,6 +434,10 @@
             </div>
         </div>
     </div>
+    
+    <div id="custom-alert">
+        <span id="alert-message"></span>
+    </div>
 
     <script>
         // מצב האפליקציה
@@ -425,6 +445,20 @@
         let history = [];
         let newAmount = 0;
         let selectedAmount = null;
+        
+        // פונקציה מותאמת אישית להצגת הודעות במקום alert
+        function showMessage(message) {
+            const alertEl = document.getElementById('custom-alert');
+            const messageEl = document.getElementById('alert-message');
+            
+            messageEl.textContent = message;
+            alertEl.style.display = 'block';
+            
+            // הסתר את ההודעה אחרי 3 שניות
+            setTimeout(() => {
+                alertEl.style.display = 'none';
+            }, 3000);
+        }
         
         // פורמט מספר עם פסיקים
         function formatNumber(num) {
@@ -457,33 +491,33 @@
             }
         }
         
-      // הפחתת סכום קבוע
-function subtractAmount() {
-    if (!selectedAmount) {
-        alert('אנא בחר סכום להפחתה');
-        return;
-    }
-    
-    if (selectedAmount > totalAmount) {
-        alert('הסכום שנבחר גדול מהסכום הכולל הנוכחי');
-        return;
-    }
-    
-    const oldAmount = totalAmount;
-    totalAmount -= selectedAmount;
-    
-    // עדכון התצוגה
-    document.getElementById('total-amount').textContent = formatNumber(totalAmount);
-    
-    // הוספה להיסטוריה
-    addToHistory(oldAmount, totalAmount, -selectedAmount, `הפחתה של ${selectedAmount} קונ'`);
-    
-    // איפוס הבחירה
-    document.querySelectorAll('.amount-btn').forEach(btn => {
-        btn.classList.remove('selected-amount');
-    });
-    selectedAmount = null;
-}
+        // הפחתת סכום קבוע
+        function subtractAmount() {
+            if (!selectedAmount) {
+                showMessage('אנא בחר סכום להפחתה');
+                return;
+            }
+            
+            if (selectedAmount > totalAmount) {
+                showMessage('הסכום שנבחר גדול מהסכום הכולל הנוכחי');
+                return;
+            }
+            
+            const oldAmount = totalAmount;
+            totalAmount -= selectedAmount;
+            
+            // עדכון התצוגה
+            document.getElementById('total-amount').textContent = formatNumber(totalAmount);
+            
+            // הוספה להיסטוריה
+            addToHistory(oldAmount, totalAmount, -selectedAmount, `הפחתה של ${selectedAmount} קונ'`);
+            
+            // איפוס הבחירה
+            document.querySelectorAll('.amount-btn').forEach(btn => {
+                btn.classList.remove('selected-amount');
+            });
+            selectedAmount = null;
+        }
         
         // הפחתת סכום מותאם אישית
         function subtractCustomAmount() {
@@ -497,12 +531,12 @@ function subtractAmount() {
             const amount = parseInt(input.value);
             
             if (!amount || isNaN(amount) || amount <= 0) {
-                alert('אנא הזן סכום תקין');
+                showMessage('אנא הזן סכום תקין');
                 return;
             }
             
             if (amount > totalAmount) {
-                alert('הסכום שהוזן גדול מהסכום הכולל הנוכחי');
+                showMessage('הסכום שהוזן גדול מהסכום הכולל הנוכחי');
                 return;
             }
             
@@ -525,7 +559,7 @@ function subtractAmount() {
             const amount = parseInt(input.value);
             
             if ((!amount && amount !== 0) || isNaN(amount) || amount < 0) {
-                alert('אנא הזן סכום תקין');
+                showMessage('אנא הזן סכום תקין');
                 return;
             }
             
